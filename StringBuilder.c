@@ -9,26 +9,26 @@
 #include "StringBuilder.h"
 #define GROWTH_RATE 2
 
-enum bool {
+typedef enum bool {
     true = 1,
     false = 0
-};
+} Bool;
 
 typedef struct _listNode {
-    StringBuilderPtr string;
+	int size;
     struct _listNode * next;
+    char * str;
+    int MAX_CAPACITY;
 }* ListNodePtr;
-    
+
 struct _list {
     ListNodePtr head;
     ListNodePtr tail;
-    int totalStringSize;
 };
 
 struct _str {
-    char * str;
-    int size;
-    int capacity;
+    ListPtr stringBuilder;
+    int totalStringSize;
 };
 
 StringBuilderPtr newStringBuilder()
@@ -40,52 +40,97 @@ StringBuilderPtr newStringBuilderSize(int size)
 {
     
     StringBuilderPtr builder = malloc(sizeof(struct _str));
-    builder->str = malloc(sizeof(char)*size);
-    builder->size = 0;
-    builder->capacity = size;
-    
+    builder->stringBuilder = malloc(sizeof(struct _list));
+    builder->stringBuilder->head = malloc(sizeof(struct _listNode));
+    builder->stringBuilder->head->str = malloc(sizeof(char)*size);
+    builder->stringBuilder->head->MAX_CAPACITY = size;
+    builder->stringBuilder->head->size = 0;
+    builder->stringBuilder->tail = malloc(sizeof(struct _listNode));
+    builder->stringBuilder->tail = builder->stringBuilder->head;
+	builder->totalStringSize = 0;
     return builder;
 }
-int arraySize(const char * str)
+
+ListNodePtr newListNode(int size)
+{
+    ListNodePtr node = malloc(sizeof(struct _listNode));
+    node->str = malloc(sizeof(char)*size);
+    node->MAX_CAPACITY = size;
+    node->size = 0;
+    
+    return node;
+}
+    
+int str_size(const char * str)
 {
     int i;
     for ( i = 0; str[i] != '\0'; i++);
     return i;
 }
-void copyString(char * src, char * dst)
+
+void add(StringBuilderPtr builder)
 {
-    for ( int i = 0; src[i] != '\0'; i++ )
-    {
-        dst[i] = src[i];
-    }
-}
-void growArray(StringBuilderPtr builder, int s)
-{
-    int b_size = builder->size;
-    int b_capcity = builder->capacity;
-    if ( (b_size+s) >= b_capcity)
-    {
-        StringBuilderPtr newBuilder = newStringBuilderSize(b_capcity*GROWTH_RATE);
-        newBuilder->size = builder->size;
-        copyString(builder->str, newBuilder->str);
-    }
+    StringBuilderPtr node = newListNode(255);
+    builder->stringBuilder->tail->next = node;
+    builder->stringBuilder->tail = node;
 }
 
+Bool willNotOverflow(StringBuilderPtr builder, int size)
+{
+    if ( (builder->stringBuilder->tail->size+size) <
+        (builder->stringBuilder->tail->MAX_CAPACITY) )
+        return true;
+    else
+        return false;
+}
 void append(StringBuilderPtr builder, const char * str)
 {
-    int totalLength = arraySize(str);
-    int builderSize = builder->size;
-    growArray(builder, totalLength);
-    
-    for ( int i = builderSize, j = 0; i < (builderSize+totalLength); i++, j++)
+    /*
+        1. check if the size of the current stringbuider length + the new string size 
+           will overflow the buffer?
+            1.2 if so then add a new node to the list, with at least the min size being the size of the string
+    */
+
+    int L_str_length = str_size(str);
+    if ( willNotOverflow(builder, L_str_length) == false )
     {
-        builder->str[i] = str[j];
+        add(builder);
+    }
+
+    int builderSize = builder->stringBuilder->tail->size;
+    
+    for ( int i = builderSize, j = 0; i < (builderSize+L_str_length); i++, j++)
+    {
+        builder->stringBuilder->tail->str[i] = str[j];
     }
     
-    builder->size+=totalLength;
+    builder->stringBuilder->tail->size+=L_str_length;
+    builder->totalStringSize+=L_str_length;
 }
-    
+
 char * toString(StringBuilderPtr builder)
 {
-    return builder->str;
+	/* old code WORKING! *\/
+    char * str = malloc(sizeof(char) * (builder->totalStringSize) );
+    ListNodePtr temp = builder->stringBuilder->head;
+    
+    while ( temp != NULL )
+    {
+        str = strncat(str, temp->str, temp->size);
+        temp = temp->next;
+    }
+
+	return str;
+	/**/
+	StringBuilderPtr result = newStringBuilderSize(builder->totalStringSize+1);
+
+	ListNodePtr temp = builder->stringBuilder->head;
+
+	while (temp != NULL)
+	{
+		append(result, temp->str);
+		temp = temp->next;
+	}
+
+	return result->stringBuilder->head->str;
 }
