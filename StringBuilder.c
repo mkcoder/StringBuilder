@@ -110,18 +110,6 @@ void append(StringBuilderPtr builder, const char * str)
 
 char * toString(StringBuilderPtr builder)
 {
-	/* old code WORKING! *\/
-    char * str = malloc(sizeof(char) * (builder->totalStringSize) );
-    ListNodePtr temp = builder->stringBuilder->head;
-    
-    while ( temp != NULL )
-    {
-        str = strncat(str, temp->str, temp->size);
-        temp = temp->next;
-    }
-
-	return str;
-	/**/
 	StringBuilderPtr result = newStringBuilderSize(builder->totalStringSize+1);
 
 	ListNodePtr temp = builder->stringBuilder->head;
