@@ -2,7 +2,6 @@
 //  StringBuilder.h
 //  StringBuilder
 //
-//  Created by Khalil's on 4/2/15.
 //  Copyright (c) 2015 Muhammad Khan. All rights reserved.
 //
 
